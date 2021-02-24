@@ -1,14 +1,13 @@
 from psaw import PushshiftAPI
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import tkinter
 
 def when_pressed(event=None):
     global t, x
 
     api = PushshiftAPI()
-
-    start = date.today()
-    
+    now = datetime.now()
+    start = datetime(hour=1, month=now.month, year=now.year, day=(now.day-3))
     posts = list(api.search_submissions(after=start, subreddit='wallstreetbets', filter=['url', 'author', 'title', 'subreddit'], limit=500))
 
     for post in posts:
