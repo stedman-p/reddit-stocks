@@ -57,6 +57,7 @@ e = tkinter.Entry(gui, width = 25)
 e.bind('<Return>', when_pressed)
 b = tkinter.Button(gui, text="Enter", command=when_pressed, height = 1, width = 10)
 
+# add all elements to the gui
 text.pack(side='bottom')
 l.pack(side='left')
 e.pack(side="left")
