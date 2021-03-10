@@ -1,6 +1,6 @@
 from psaw import PushshiftAPI
 from datetime import datetime, date, timedelta
-import tkinter
+import tkinter, yahoo_fin.stock_info as si
 import webbrowser, requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -17,9 +17,19 @@ def when_pressed(event=None):
     global x, tags, urls
 
     api = PushshiftAPI()
+    try:
+        si.get_data(tick_enter.get())
+    except:
+        text.insert('1.0', "Invalid Ticker")
+        return
+        
     date_to_use = datetime.now() - timedelta(days=3)
-    if date_enter.get() != "":
-        date_to_use = datetime.strptime(date_enter.get(), '%m/%d/%Y')
+    try:
+        if date_enter.get() != "":
+            date_to_use = datetime.strptime(date_enter.get(), '%m/%d/%Y')
+    except:
+        date_to_use = datetime.now() - timedelta(days=3)
+
     start = datetime(hour=1, month=date_to_use.month, year=date_to_use.year, day=date_to_use.day)
     posts = list(api.search_submissions(q = str(tick_enter.get().upper()), after=start, subreddit='wallstreetbets', filter=['url', 'title',], limit=500))
 
