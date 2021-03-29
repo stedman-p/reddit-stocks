@@ -28,9 +28,19 @@ def setup_chrome():
     chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
     return webdriver.Chrome(options=chrome_options)
 
+def datePlusOne(string):
+	date = datetime.strptime(string, '%b %d, %Y')
+	addOne = timedelta(days = 1)
+	date = date + addOne
+	strDate = date.strftime('%b %d, %Y')
+	return strDate
+
+
 def add_financial_info(ticker):
     current_price = float(si.get_live_price(ticker))
     info = si.get_quote_table(ticker)
+    valuation = si.get_stats_valuation(ticker)
+    stats = si.get_stats(ticker)
     price.config(text = "${:.2f}".format(current_price))
     close_price = float(info["Previous Close"])
     price_change = (current_price - close_price)
@@ -47,8 +57,12 @@ def add_financial_info(ticker):
     div = info["Forward Dividend & Yield"]
     if div == "N/A (N/A)":
         dividend.configure(text = "No Dividend")
+        ex_div.config(text = "No Dividend")
+        payout_ratio.config(text = "No Dividend")
     else:
         dividend.config(text = "${}".format(div))
+        ex_div.config(text = info["Ex-Dividend Date"])
+    
     
     pe = info["PE Ratio (TTM)"]
     if str(pe) == "nan":
@@ -56,9 +70,8 @@ def add_financial_info(ticker):
         payout_ratio.config(text = "Not Profitable")
     else:
         pe_ratio.config(text = pe)
-        eps = float(info["EPS (TTM)"])
-        div_value = float(div.split("(")[0].strip())
-        payout_ratio.config(text = "{:.2f}%".format(100*div_value/eps))
+        if not payout_ratio["text"] == "No Dividend":
+            payout_ratio.config(text = stats["Value"][23])
 
     stock_beta = info["Beta (5Y Monthly)"]
     if str(stock_beta) == "nan":
@@ -70,6 +83,14 @@ def add_financial_info(ticker):
     range_52 = range_52.split("-")
     high_52.config(text = "${}".format(range_52[1].strip()))
     low_52.config(text = "${}".format(range_52[0].strip()))
+
+    fwdpe = valuation[list(valuation)[1]][3]
+    if str(fwdpe) == "nan":
+        pe_fwd.config(text = "Not Profitable")
+    else:
+        pe_fwd.config(text = fwdpe)
+    
+    next_earn.config(text = info["Earnings Date"].split("-")[0].strip())
 
     
 
@@ -122,7 +143,7 @@ main_frame = tkinter.Frame(gui)
 main_frame.pack()
 reddit_frame = tkinter.Frame(gui)
 reddit_frame.pack()
-text = tkinter.Text(reddit_frame, height = 10)
+text = tkinter.Text(reddit_frame, height = 20)
 text.pack()
 info = tkinter.Label(reddit_frame, text = "Financial Information", font = ("TkDefaultFont", 15)).pack()
 gui.title("Recent Reddit Posts with Cashtags")
@@ -156,39 +177,45 @@ value_lab.grid(row = 0, column = 4)
 value = tkinter.Label(financial_frame, width = 15, anchor = "w")
 value.grid(row = 0, column = 5)
 div_lab = tkinter.Label(financial_frame, text = "Dividend (Yield):", width = 15, anchor = "w")
-div_lab.grid(row = 1, column = 0)
+div_lab.grid(row = 2, column = 0)
 dividend = tkinter.Label(financial_frame, width = 15, anchor = "w")
-dividend.grid(row = 1, column = 1)
+dividend.grid(row = 2, column = 1)
 pe_label = tkinter.Label(financial_frame, text = "P/E Ratio (TTM):", width = 15, anchor = "w")
-pe_label.grid(row = 1, column = 2)
+pe_label.grid(row = 3, column = 0)
 pe_ratio = tkinter.Label(financial_frame, width = 15, anchor = "w")
-pe_ratio.grid(row = 1, column = 3)
+pe_ratio.grid(row = 3, column = 1)
 beta_label = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "Beta (5Y Monthly):")
 beta_label.grid(row = 1, column = 4)
 beta = tkinter.Label(financial_frame, width = 15, anchor = "w")
 beta.grid(row = 1, column = 5)
 high_52_lab = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "52 Week High:")
-high_52_lab.grid(row = 2, column = 0)
+high_52_lab.grid(row = 1, column = 0)
 high_52 = tkinter.Label(financial_frame, width = 15, anchor = "w")
-high_52.grid(row = 2, column = 1)
+high_52.grid(row = 1, column = 1)
 low_52_lab = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "52 Week Low:")
-low_52_lab.grid(row = 2, column = 2)
+low_52_lab.grid(row = 1, column = 2)
 low_52 = tkinter.Label(financial_frame, width = 15, anchor = "w")
-low_52.grid(row = 2, column = 3)
+low_52.grid(row = 1, column = 3)
 payout_ratio_lab = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "Payout Ratio (TTM):")
-payout_ratio_lab.grid(row = 2, column = 4)
+payout_ratio_lab.grid(row = 2, column = 2)
 payout_ratio = tkinter.Label(financial_frame, width = 15, anchor = "w")
-payout_ratio.grid(row = 2, column = 5)
-# tick.pack(side="left")
-# tick_enter.pack(side="left")
-# dat.pack(side="left")
-# date_enter.pack(side="left")
-# enter_but.pack(side="left")
+payout_ratio.grid(row = 2, column = 3)
+ex_div_label = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "Ex-Dividend Date:")
+ex_div_label.grid(row = 2, column = 4)
+ex_div = tkinter.Label(financial_frame, width = 15, anchor = "w")
+ex_div.grid(row = 2, column = 5)
+pe_fwd_label = tkinter.Label(financial_frame, anchor = "w", width = 15, text = "P/E Ratio (FWD):")
+pe_fwd_label.grid(row = 3, column = 2)
+pe_fwd = tkinter.Label(financial_frame, width = 15, anchor = "w")
+pe_fwd.grid(row = 3, column = 3)
+next_earn_lab = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "Next Earnings (Est.):")
+next_earn_lab.grid(row = 3, column = 4)
+next_earn = tkinter.Label(financial_frame, width = 15, anchor = "w")
+next_earn.grid(row = 3, column = 5)
 
-# reddit_frame.pack(side="bottom")
-# text.pack()
+# add ex date and pay date, free cash flow, fcf yield maybe (free cash flow / market cap), fcf payout ratio, earnings date
 
 
 
-gui.geometry("700x800")
+gui.geometry("700x500")
 gui.mainloop()
