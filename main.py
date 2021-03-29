@@ -1,7 +1,7 @@
 from psaw import PushshiftAPI
 from datetime import datetime, date, timedelta
 import tkinter, yahoo_fin.stock_info as si
-import webbrowser, requests
+import webbrowser, requests, time, math
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -30,24 +30,49 @@ def setup_chrome():
 
 def add_financial_info(ticker):
     current_price = float(si.get_live_price(ticker))
+    info = si.get_quote_table(ticker)
     price.config(text = "${:.2f}".format(current_price))
-    table = si.get_data(ticker, start_date="3/14/2021", index_as_date=False)
-    indexes = table.index
-    last_date = table['date'][indexes[-1]].to_pydatetime()
-    if last_date.day == datetime.now().day:
-        day_index = indexes[-2]
-    else:
-        day_index = indexes[-1]
-    close_price = float(table['close'][day_index])
+    close_price = float(info["Previous Close"])
     price_change = (current_price - close_price)
     percent_change = (price_change/close_price)*100
     if price_change < 0:
         color = "red"
-        sign = ""
+        sign = "-"
     else: 
         color = "green"
         sign = "+"
-    change.config(text = "{}{:.2f} ({}{:.2f}%)".format(sign, price_change, sign, percent_change), fg = color)
+    change.config(text = "{}${:.2f} ({}{:.2f}%)".format(sign, abs(price_change), sign, abs(percent_change)), fg = color)
+    value.config(text = info["Market Cap"])
+
+    div = info["Forward Dividend & Yield"]
+    if div == "N/A (N/A)":
+        dividend.configure(text = "No Dividend")
+    else:
+        dividend.config(text = "${}".format(div))
+    
+    pe = info["PE Ratio (TTM)"]
+    if str(pe) == "nan":
+        pe_ratio.config(text = "Not Profitable")
+        payout_ratio.config(text = "Not Profitable")
+    else:
+        pe_ratio.config(text = pe)
+        eps = float(info["EPS (TTM)"])
+        div_value = float(div.split("(")[0].strip())
+        payout_ratio.config(text = "{:.2f}%".format(100*div_value/eps))
+
+    stock_beta = info["Beta (5Y Monthly)"]
+    if str(stock_beta) == "nan":
+        beta.config(text = "Not enough data")
+    else:
+        beta.config(text = stock_beta)
+    
+    range_52 = info["52 Week Range"]
+    range_52 = range_52.split("-")
+    high_52.config(text = "${}".format(range_52[1].strip()))
+    low_52.config(text = "${}".format(range_52[0].strip()))
+
+    
+
 
 def when_pressed(event=None):
     global line, tags, urls
@@ -59,6 +84,7 @@ def when_pressed(event=None):
         text.insert('1.0', "Invalid Ticker\n")
         return
     add_financial_info(ticker)
+    
     date_to_use = datetime.now() - timedelta(days=2)
     try:
         if date_enter.get() != "":
@@ -118,18 +144,41 @@ financial_frame = tkinter.Frame(gui)
 financial_frame.pack()
 
 price_lab = tkinter.Label(financial_frame, text = "Last Price:", width = 15, anchor = "w")
-price_lab.grid(row=1,column=0)
+price_lab.grid(row=0,column=0)
 price = tkinter.Label(financial_frame, width = 15, anchor = "w")
-price.grid(row = 1, column=1)
+price.grid(row = 0, column=1)
 change_lab = tkinter.Label(financial_frame, text = "Day Change (%):", width = 15, anchor = "w")
-change_lab.grid(row=1, column = 2)
+change_lab.grid(row=0, column = 2)
 change = tkinter.Label(financial_frame, width = 15, anchor = "w")
-change.grid(row = 1, column = 3)
+change.grid(row = 0, column = 3)
 value_lab = tkinter.Label(financial_frame, text = "Market Cap (B):", width = 15, anchor = "w")
-value_lab.grid(row = 1, column = 4)
+value_lab.grid(row = 0, column = 4)
 value = tkinter.Label(financial_frame, width = 15, anchor = "w")
-value.grid(row = 1, column = 5)
-
+value.grid(row = 0, column = 5)
+div_lab = tkinter.Label(financial_frame, text = "Dividend (Yield):", width = 15, anchor = "w")
+div_lab.grid(row = 1, column = 0)
+dividend = tkinter.Label(financial_frame, width = 15, anchor = "w")
+dividend.grid(row = 1, column = 1)
+pe_label = tkinter.Label(financial_frame, text = "P/E Ratio (TTM):", width = 15, anchor = "w")
+pe_label.grid(row = 1, column = 2)
+pe_ratio = tkinter.Label(financial_frame, width = 15, anchor = "w")
+pe_ratio.grid(row = 1, column = 3)
+beta_label = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "Beta (5Y Monthly):")
+beta_label.grid(row = 1, column = 4)
+beta = tkinter.Label(financial_frame, width = 15, anchor = "w")
+beta.grid(row = 1, column = 5)
+high_52_lab = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "52 Week High:")
+high_52_lab.grid(row = 2, column = 0)
+high_52 = tkinter.Label(financial_frame, width = 15, anchor = "w")
+high_52.grid(row = 2, column = 1)
+low_52_lab = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "52 Week Low:")
+low_52_lab.grid(row = 2, column = 2)
+low_52 = tkinter.Label(financial_frame, width = 15, anchor = "w")
+low_52.grid(row = 2, column = 3)
+payout_ratio_lab = tkinter.Label(financial_frame, width = 15, anchor = "w", text = "Payout Ratio (TTM):")
+payout_ratio_lab.grid(row = 2, column = 4)
+payout_ratio = tkinter.Label(financial_frame, width = 15, anchor = "w")
+payout_ratio.grid(row = 2, column = 5)
 # tick.pack(side="left")
 # tick_enter.pack(side="left")
 # dat.pack(side="left")
