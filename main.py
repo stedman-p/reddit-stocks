@@ -13,6 +13,7 @@ def open_url(event, tag):
     webbrowser.open(urls[tag])
 
 def add_link(event, post):
+
     tag = "tag" + str(line)
     urls[tag] = post.url
     text.insert('1.0', post.title + "\n")
@@ -93,11 +94,11 @@ def add_financial_info(ticker):
     next_earn.config(text = info["Earnings Date"].split("-")[0].strip())
 
     
-
-
 def when_pressed(event=None):
     global line, tags, urls
 
+    text.delete('1.0', 'end')
+    time.sleep(1)
     ticker = tick_enter.get().upper()
     try:
         si.get_data(ticker)
@@ -116,7 +117,7 @@ def when_pressed(event=None):
     api = PushshiftAPI()
 
     start = int(datetime(hour=1, month=date_to_use.month, year=date_to_use.year, day=date_to_use.day).timestamp())
-    posts = api.search_submissions(q = str("$" + ticker), after=start, before = int((datetime.now() - timedelta(hours=2)).timestamp()), subreddit='wallstreetbets', filter=['url', 'title'], limit=500)
+    posts = api.search_submissions(q = str("$" + ticker), after=start, before = int((datetime.now() - timedelta(hours=2)).timestamp()), subreddit='wallstreetbets', filter=['url', 'title'], limit=1000)
     
     for post in posts:
         words = post.title.split()
@@ -172,7 +173,7 @@ change_lab = tkinter.Label(financial_frame, text = "Day Change (%):", width = 15
 change_lab.grid(row=0, column = 2)
 change = tkinter.Label(financial_frame, width = 15, anchor = "w")
 change.grid(row = 0, column = 3)
-value_lab = tkinter.Label(financial_frame, text = "Market Cap (B):", width = 15, anchor = "w")
+value_lab = tkinter.Label(financial_frame, text = "Market Cap:", width = 15, anchor = "w")
 value_lab.grid(row = 0, column = 4)
 value = tkinter.Label(financial_frame, width = 15, anchor = "w")
 value.grid(row = 0, column = 5)
@@ -213,7 +214,7 @@ next_earn_lab.grid(row = 3, column = 4)
 next_earn = tkinter.Label(financial_frame, width = 15, anchor = "w")
 next_earn.grid(row = 3, column = 5)
 
-# add ex date and pay date, free cash flow, fcf yield maybe (free cash flow / market cap), fcf payout ratio, earnings date
+# add ex date and pay date, free cash flow, fcf yield maybe (free cash flow / market cap), fcf payout ratio
 
 
 
