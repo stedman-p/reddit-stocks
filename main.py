@@ -124,9 +124,9 @@ def when_pressed(event=None):
         #cashtags = list(set(filter(lambda word: word.startswith('$' + ticker), words)))
         cashtags = [word for word in words if ('$' + ticker) in word]
         #        cashtags = list(set(filter(lambda word: word.lower().startswith('$' + ticker.lower(), words)))
-        print(cashtags)
+        
         if len(cashtags) > 0:
-            print(post.url)
+            
             if "www.reddit.com" in post.url:                        
                 browser = setup_chrome()
                 browser.get(post.url)
