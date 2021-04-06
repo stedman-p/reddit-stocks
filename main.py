@@ -107,22 +107,26 @@ def when_pressed(event=None):
         return
     add_financial_info(ticker)
     
-    date_to_use = datetime.now() - timedelta(days=2)
+    date_to_use = datetime.now() - timedelta(days=20)
     try:
         if date_enter.get() != "":
             date_to_use = datetime.strptime(date_enter.get(), '%m/%d/%Y')
     except Exception:
-        date_to_use = datetime.now() - timedelta(days=3)
+        date_to_use = datetime.now() - timedelta(days=20)
 
     api = PushshiftAPI()
-
+    #q = str("$" + ticker), 
     start = int(datetime(hour=1, month=date_to_use.month, year=date_to_use.year, day=date_to_use.day).timestamp())
-    posts = api.search_submissions(q = str("$" + ticker), after=start, before = int((datetime.now() - timedelta(hours=2)).timestamp()), subreddit='wallstreetbets', filter=['url', 'title'], limit=1000)
+    posts = api.search_submissions(title=str("$"+ticker),after=start, before = int((datetime.now() - timedelta(hours=2)).timestamp()), subreddit='wallstreetbets', filter=['url', 'title'], limit=1000)
     
     for post in posts:
         words = post.title.split()
-        cashtags = list(set(filter(lambda word: word.lower().startswith('$' + ticker.lower()), words)))
+        #cashtags = list(set(filter(lambda word: word.startswith('$' + ticker), words)))
+        cashtags = [word for word in words if ('$' + ticker) in word]
+        #        cashtags = list(set(filter(lambda word: word.lower().startswith('$' + ticker.lower(), words)))
+        print(cashtags)
         if len(cashtags) > 0:
+            print(post.url)
             if "www.reddit.com" in post.url:                        
                 browser = setup_chrome()
                 browser.get(post.url)
